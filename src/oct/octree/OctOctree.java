@@ -34,6 +34,8 @@
 package oct.octree;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
@@ -75,7 +77,8 @@ public class OctOctree {
 
 	// list
 	public HashSet<OctNode> nodeList;
-	
+	public HashSet<OctNode> selectedNodes = new HashSet<OctNode>();
+
 	// *************************************************************************************
 	// CONSTRUCTORS
 	// *************************************************************************************
@@ -160,19 +163,19 @@ public class OctOctree {
 		origin.y = _y;
 		origin.z = _z;
 	}
-	
+
 	public void setOrigin(PVector _origin) {
 		origin.x = _origin.x;
 		origin.y = _origin.y;
 		origin.z = _origin.z;
 	}
-	
+
 	public OctXYZ getMin() {
 		OctXYZ t = origin.add(dimension);
 		OctXYZ min = new OctXYZ(PApplet.min(origin.x,t.x),PApplet.min(origin.y,t.y),PApplet.min(origin.z,t.z));
 		return min;
 	}
-	
+
 	public OctXYZ getMax() {
 		OctXYZ t = origin.add(dimension);
 		OctXYZ max = new OctXYZ(PApplet.max(origin.x,t.x),PApplet.max(origin.y,t.y),PApplet.max(origin.z,t.z));
@@ -289,7 +292,7 @@ public class OctOctree {
 		OctRST coord = _tempPoint.toRST(this);
 		nodeList.add(new OctNode(PApplet.floor(coord.r*(1<<_level)),PApplet.floor(coord.s*(1<<_level)),PApplet.floor(coord.t*(1<<_level)),_level));
 	}
-	
+
 	// *************************************************************************************
 	// ADD AND REMOVE NODES
 	// *************************************************************************************
@@ -367,6 +370,82 @@ public class OctOctree {
 		for (OctNode _tempNode : _tempNodeList) {
 			this.deleteNode(_tempNode);
 		}
+	}
+
+	public void selectNode(OctXYZ start, OctXYZ end) {
+		//selectedNodes.addAll( this.getRayNodes(start,end).keySet());
+		OctNode closest = this.getClosestNode( start,  end);
+		for (OctNode _tempNode : this.nodeList) {
+			if (_tempNode.equals(closest))
+			{_tempNode.isSelected=true;
+			selectedNodes.add(_tempNode);
+			//PApplet.println("one node selected");
+			}
+		}
+	}	
+
+	private HashMap<OctNode,Float> getRayNodes(OctXYZ start, OctXYZ end) {
+		//PApplet.println("getraytnode");
+		OctOctree tempTree = new OctOctree(p5,1000,1000,1000);
+		tempTree.dimension=this.dimension;
+		tempTree.origin=this.origin;
+		tempTree.maxD=this.maxD;
+		tempTree.minD=this.minD;
+		
+		HashMap<OctNode,Float> _tempNodes = new HashMap<OctNode, Float>();
+		ArrayList<OctNode> listOfNodes = new ArrayList<OctNode>();
+		ArrayList<OctNode> listOfNodes2 = new ArrayList<OctNode>();
+
+		tempTree.algGenerate(this.minD);
+		for (OctNode _tempNode : tempTree.nodeList) {
+			//PApplet.println('1');
+			OctRST point = _tempNode.intersectPoint(start.toRST(this), end.toRST(this),-999999999,999999999);
+			if (point != null) {
+				//PApplet.println("point found");
+				_tempNodes.put(_tempNode, point.sub(start.toRST(this)).getNorm());
+				listOfNodes.add(_tempNode);
+				//selectedNodes.add(_tempNode);
+			}
+		}
+		tempTree.clearNodes();
+		listOfNodes2.addAll(listOfNodes);
+		listOfNodes.clear();
+		for (int i = 0; i<this.maxD-this.minD; i++) {
+			for (OctNode _tempNode : listOfNodes2) {
+				for (OctNode _tempNode2 : _tempNode.getChildren()) {
+
+					OctRST point = _tempNode2.intersectPoint(start.toRST(this), end.toRST(this),-999999999,999999999);
+					if (point != null) {
+						_tempNodes.put(_tempNode2, point.sub(start.toRST(this)).getNorm());
+						listOfNodes.add(_tempNode2);
+						//selectedNodes.add(_tempNode2);
+					}
+				}
+			}
+			listOfNodes2.clear();
+			listOfNodes2.addAll(listOfNodes);
+			listOfNodes.clear();
+		}
+		return _tempNodes;
+	}
+
+	private OctNode getClosestNode(OctXYZ start, OctXYZ direction) {
+		//PApplet.println("getclosestnode");
+		OctNode _tempNode = new OctNode();
+		float closest=999999999;
+		//PApplet.println(start.x +"y" + start.y +"y" +start.z );
+		//PApplet.println(direction.x +"y" + direction.y +"y" +direction.z );
+		HashMap<OctNode,Float> _tempNodes = getRayNodes( start,  direction);
+		//PApplet.println(_tempNodes);
+		for (OctNode candidates : _tempNodes.keySet()) {
+			if (this.nodeList.contains(candidates) && closest > _tempNodes.get(candidates))
+			{
+				closest = _tempNodes.get(candidates);
+				_tempNode = candidates;
+			}
+		}
+		//PApplet.println("selected"+_tempNode);
+		return  _tempNode;
 	}
 
 	// *************************************************************************************
@@ -637,7 +716,7 @@ public class OctOctree {
 					OctNode tempNode = new OctNode(m, n, p, depth);
 					data = _f.compute(tempNode.getCenter().toXYZ(this).x,
 							tempNode.getCenter().toXYZ(this).y, tempNode
-									.getCenter().toXYZ(this).z);
+							.getCenter().toXYZ(this).z);
 					if (_smaller && data < _threshold) {
 						this.addNode((OctNode) tempNode);
 					}
@@ -653,7 +732,7 @@ public class OctOctree {
 	}
 
 	// TODO generate nodes at the border of the octree to close the surface
-	
+
 	/**
 	 * Generates all nodes that are below/crossing/above the threshold by
 	 * looking at the 8 corners. Requires the min and max depth level to the
@@ -696,7 +775,7 @@ public class OctOctree {
 					+ ". Min depth used instead.");
 			end = minD;
 		}
-		
+
 		HashSet<OctNode> toAdd = new HashSet<OctNode>();
 		for (int m = (int) (1 << start); --m >= 0;) {
 			for (int n = (int) (1 << start); --n >= 0;) {
@@ -706,7 +785,7 @@ public class OctOctree {
 					for (OCT_VERTEX v : OCT_VERTEX.getAll()) {
 						if (_f.compute(tempNode.getVertex(v).toXYZ(this).x,
 								tempNode.getVertex(v).toXYZ(this).y, tempNode
-										.getVertex(v).toXYZ(this).z) > _threshold) {
+								.getVertex(v).toXYZ(this).z) > _threshold) {
 							data++;
 						}
 					}
@@ -735,7 +814,7 @@ public class OctOctree {
 				for (OCT_VERTEX v : OCT_VERTEX.getAll()) {
 					if (_f.compute(tempNode2.getVertex(v).toXYZ(this).x,
 							tempNode2.getVertex(v).toXYZ(this).y, tempNode2
-									.getVertex(v).toXYZ(this).z) > _threshold)
+							.getVertex(v).toXYZ(this).z) > _threshold)
 						data++;
 				}
 				if (_below && data == 0) {
@@ -754,7 +833,7 @@ public class OctOctree {
 	}
 
 	// TODO simplify except if crossing a certain function, so that the surface is always clean
-	
+
 	/**
 	 * Simplifies the octree by maximizing the size of the nodes, grouping nodes
 	 * in bigger nodes. Requires the min and max depth level to the octree to be
@@ -801,7 +880,7 @@ public class OctOctree {
 		this.addNode(tempToAdd);
 		if (needToIterate) {
 			PApplet.println("ITERATING algSimplify:\t" + nodeList.size()
-					+ " nodes");
+			+ " nodes");
 			algSimplify(depth);
 		}
 	}
@@ -827,7 +906,7 @@ public class OctOctree {
 		}
 		boolean needToIterate = false;
 		PApplet.println("ITERATING algConstrain:\t" + nodeList.size()
-				+ " nodes");
+		+ " nodes");
 		HashSet<OctNode> tempToAdd = new HashSet<OctNode>();
 		HashSet<OctNode> tempToRemove = new HashSet<OctNode>();
 		ArrayList<OCT_ENUM> enumlist = new ArrayList<OCT_ENUM>();
@@ -856,7 +935,7 @@ public class OctOctree {
 		}
 		if (needToIterate) {
 			PApplet.println("ITERATING algConstrain:\t" + nodeList.size()
-					+ " nodes");
+			+ " nodes");
 			algConstrain(constraint);
 		}
 	}
@@ -942,6 +1021,17 @@ public class OctOctree {
 
 	public void drawAsFaces() {
 		for (OctNode tempNode : nodeList) {
+			//p5.noFill();
+			p5.beginShape(PConstants.QUADS);
+			for (OCT_FACE f : OCT_FACE.values()) {
+				for (OctRST t : tempNode.getVertices(f.getVertices())) {
+					p5.vertex(t.toXYZ(this).x, t.toXYZ(this).y, t.toXYZ(this).z);
+				}
+			}
+			p5.endShape();
+		}
+		for (OctNode tempNode : selectedNodes) {
+			p5.fill(255, 0, 0,100);
 			p5.beginShape(PConstants.QUADS);
 			for (OCT_FACE f : OCT_FACE.values()) {
 				for (OctRST t : tempNode.getVertices(f.getVertices())) {

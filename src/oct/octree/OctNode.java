@@ -60,6 +60,7 @@ public class OctNode {
 	protected short codeS;
 	protected short codeT;
 	protected byte level;
+	protected boolean isSelected = false;
 
 	// *************************************************************************************
 	// CONSTRUCTORS
@@ -1261,6 +1262,9 @@ public class OctNode {
         bbox = signDirY ? min : max;
         double tymax = (bbox.s-start.s) * invDir.s;
  
+      //  PApplet.println(tmin);
+      //  PApplet.println(tmax);
+        
         if ((tmin > tymax) || (tymin > tmax)) {
             return null;
         }
@@ -1285,7 +1289,8 @@ public class OctNode {
         if (tzmax < tmax) {
             tmax = tzmax;
         }
-
+       // PApplet.println(tmin);
+       // PApplet.println(tmax);
         if ((tmin < maxDist) && (tmax > minDist)) {
             return new OctRST(direction.normalize().scale((float) tmin).add(start));
         }
@@ -1356,6 +1361,17 @@ public class OctNode {
 		else
 			return false;
 	}
+	
+	/**
+	 * Returns true if node is selected.
+	 */	
+	public boolean isSelected() {
+		if (this.isSelected)
+			return true;
+		else
+			return false;
+	}
+	
 
 	/**
 	 * Returns true if the node is included in the '_t' node (check if the node
