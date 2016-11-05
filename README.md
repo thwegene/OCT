@@ -23,3 +23,7 @@ Example 3d: qef<BR>
 
 Example 4: dxf export<BR>
 ![](img/EX4.JPG?raw=true)
+
+Example 5: pick nodes with the mouse<BR>
+
+Example 6: add nodes with the mouse<BR>
