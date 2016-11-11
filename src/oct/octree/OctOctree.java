@@ -58,13 +58,13 @@ import processing.core.PVector;
  * need to be accessed by a function. Minimum and maximum levels are there to limit
  * the computing time of various functions.
  */
-public class OctOctree {
+public class OctOctree implements java.io.Serializable {
 
 	// *************************************************************************************
 	// VARIABLES
 	// *************************************************************************************
 
-	protected PApplet p5;
+	protected transient PApplet p5;
 
 	// xyz dimensions
 	protected OctXYZ dimension = new OctXYZ();
@@ -93,6 +93,19 @@ public class OctOctree {
 		dimension.z = _dimZ;
 		nodeList = new HashSet<OctNode>();
 	}
+	
+	/**
+	 * Creates a new Octree.
+	 */
+	public OctOctree(PApplet _p5, OctOctree _octree) {
+		p5 = _p5;
+		dimension = _octree.dimension;
+		origin = _octree.origin;
+		minD = _octree.minD;
+		maxD = _octree.maxD;
+		nodeList = _octree.nodeList;
+		selectedNodes = _octree.selectedNodes;
+	}
 
 	/**
 	 * Creates a new Octree with a user-defined dimension and origin.
@@ -116,7 +129,7 @@ public class OctOctree {
 
 	public OctOctree(PApplet _p5, OctXYZ _dimension, OctXYZ _origin) {
 		new OctOctree(_p5, _dimension.x, _dimension.y, _dimension.z, _origin.x,
-				_origin.y, _origin.z);
+				_origin.y, _origin.z); 
 	}
 
 	public OctOctree(PApplet _p5, PVector _dimension) {
@@ -184,7 +197,7 @@ public class OctOctree {
 
 	/**
 	 * This changes the center of the octree. It is a translation of the whole
-	 * existing structure.
+	 * existing structure. 
 	 */
 	public void setCenter(OctXYZ _center) {
 		origin = _center.sub(dimension.scale(0.5f));
@@ -1021,7 +1034,6 @@ public class OctOctree {
 
 	public void drawAsFaces() {
 		for (OctNode tempNode : nodeList) {
-			//p5.noFill();
 			p5.beginShape(PConstants.QUADS);
 			for (OCT_FACE f : OCT_FACE.values()) {
 				for (OctRST t : tempNode.getVertices(f.getVertices())) {

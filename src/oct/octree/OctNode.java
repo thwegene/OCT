@@ -50,7 +50,7 @@ import processing.core.PVector;
 /**
  * This is the basic unit of the octree.
  */
-public class OctNode {
+public class OctNode implements java.io.Serializable {
 
 	// *************************************************************************************
 	// VARIABLES

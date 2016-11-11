@@ -41,7 +41,7 @@ import processing.core.PVector;
 /**
  * Vector class, provides relative coordinates internal to the tree. Between 0 and 1 if within bounds. 
  */
-public class OctRST {
+public class OctRST implements java.io.Serializable {
 
 	public float r;
 	public float s;

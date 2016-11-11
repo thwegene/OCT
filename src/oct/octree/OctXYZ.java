@@ -41,7 +41,7 @@ import processing.core.PVector;
 /**
  * Vector class, provides absolute "real world" coordinates. Work with float values.
  */
-public class OctXYZ {
+public class OctXYZ implements java.io.Serializable {
 
 	public float x;
 	public float y;
@@ -84,6 +84,15 @@ public class OctXYZ {
 		tempV.r = (this.x - _octree.getOrigin().x) / _octree.getDimension().x ;
 		tempV.s = (this.y - _octree.getOrigin().y) / _octree.getDimension().y ;
 		tempV.t = (this.z - _octree.getOrigin().z) / _octree.getDimension().z ;
+		return tempV;
+	}
+	
+	//TODO
+	public OctRST toRST(OctOctree _octree, int level) {
+		OctRST tempV = new OctRST();
+		tempV.r = (this.x - _octree.getOrigin().x) / _octree.getDimension().x * PApplet.pow(2,level);
+		tempV.s = (this.y - _octree.getOrigin().y) / _octree.getDimension().y * PApplet.pow(2,level) ;
+		tempV.t = (this.z - _octree.getOrigin().z) / _octree.getDimension().z * PApplet.pow(2,level) ;
 		return tempV;
 	}
 	
